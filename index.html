@@ -56,8 +56,8 @@ header{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .rate-edit{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:600}
 .rate-edit input{width:7.5em;padding:8px 10px;border-radius:8px;border:0;font:600 1.05rem var(--body);background:#fff;color:#18213a}
 .rate-note{font-size:.8rem;opacity:.85}
-.tabs{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
-.tabs button{border:0;background:transparent;color:var(--muted);font:700 .95rem var(--body);padding:11px 4px;border-radius:9px;cursor:pointer}
+.tabs{display:grid;grid-template-columns:repeat(2,1fr);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
+.tabs button{border:0;background:transparent;color:var(--muted);font:700 1rem var(--body);padding:12px 6px;border-radius:9px;cursor:pointer}
 .tabs button[aria-selected="true"]{background:var(--gold);color:#241800}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px}
 .field-lbl{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
@@ -153,8 +153,8 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
   </section>
 
   <div class="tabs" role="tablist">
-    <button role="tab" id="tabType" aria-selected="true" aria-controls="paneType">Type</button>
-    <button role="tab" id="tabScan" aria-selected="false" aria-controls="paneScan">Scan</button>
+    <button role="tab" id="tabType" aria-selected="true" aria-controls="paneType">Type price</button>
+    <button role="tab" id="tabScan" aria-selected="false" aria-controls="paneScan">Scan price</button>
     <button role="tab" id="tabTr" aria-selected="false" aria-controls="paneTr">Translate</button>
     <button role="tab" id="tabHear" aria-selected="false" aria-controls="paneHear">Listen</button>
   </div>
@@ -429,7 +429,7 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
       lastHits = list.slice(0, 6); rerenderHits();
       status(list.length ? "Pick the right number. If it was misread, tap Fix number." : "No number found. Shoot closer, brighter and straight on.", !list.length);
     }catch(err){
-      status("The number reader could not load. Check your internet, or use the Type tab.", true);
+      status("The number reader could not load. Check your internet, or use the Type price tab.", true);
     }
   }
 
