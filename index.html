@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+<title>BahtKira</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one-column phone tool — rate strip, mode switch, big converter, running tally */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --ink:#18213a; --muted:#5d6680; --line:#d8dde7;
+  --gold:#e8a317; --gold-ink:#7a4f00; --gold-soft:#fdf1d6; --indigo:#26306b; --ok:#1f7a4d; --bad:#b3261e;
+  --display:"Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif;
+  --body:"Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1424; --surface:#182036; --ink:#eef0f7; --muted:#9aa3bd; --line:#2a3452;
+  --gold:#f2b632; --gold-ink:#f8d27a; --gold-soft:#2c2614; --indigo:#a9b4ff; --ok:#5ccf93; --bad:#ff8a80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1424; --surface:#182036; --ink:#eef0f7; --muted:#9aa3bd; --line:#2a3452;
+  --gold:#f2b632; --gold-ink:#f8d27a; --gold-soft:#2c2614; --indigo:#a9b4ff; --ok:#5ccf93; --bad:#ff8a80; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45}
+.wrap{max-width:520px;margin:0 auto;padding-block:18px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.brand{font-family:var(--display);font-weight:800;font-size:1.75rem;letter-spacing:-.02em}
+.brand span{color:var(--gold)}
+.by{font-size:.78rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.rate{background:var(--indigo);color:#fff;border-radius:14px;padding:14px 16px;display:grid;gap:8px}
+:root[data-theme="dark"] .rate{color:#0f1424}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .rate{color:#0f1424}}
+.rate-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.rate-lbl{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;opacity:.8}
+.rate-val{font-family:var(--display);font-weight:600;font-size:1.25rem;font-variant-numeric:tabular-nums}
+.rate button{background:transparent;color:inherit;border:1.5px solid currentColor;border-radius:999px;padding:6px 12px;font:600 .82rem var(--body);cursor:pointer;opacity:.9}
+.rate-edit{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:600}
+.rate-edit input{width:7.5em;padding:8px 10px;border-radius:8px;border:0;font:600 1.05rem var(--body);background:#fff;color:#18213a}
+.rate-note{font-size:.8rem;opacity:.85}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
+.tabs button{border:0;background:transparent;color:var(--muted);font:700 1rem var(--body);padding:11px;border-radius:9px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--gold);color:#241800}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.field-lbl{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.thb-in{display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--line);padding-bottom:6px}
+.thb-in:focus-within{border-color:var(--gold)}
+.sym{font-family:var(--display);font-size:2rem;color:var(--muted)}
+#thb{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:800 2.6rem var(--display);font-variant-numeric:tabular-nums;outline:none}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:7px 13px;font:600 .9rem var(--body);cursor:pointer;font-variant-numeric:tabular-nums}
+.result{background:var(--gold-soft);border-radius:12px;padding:14px 16px}
+.myr{font-family:var(--display);font-weight:800;font-size:3rem;line-height:1.05;color:var(--gold-ink);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.tip{font-size:.85rem;color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.btn{flex:1;min-width:140px;border:0;border-radius:11px;padding:13px 14px;font:700 1rem var(--body);cursor:pointer;background:var(--ink);color:var(--surface)}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn:disabled{opacity:.5;cursor:default}
+button:focus-visible,input:focus-visible,label:focus-within{outline:3px solid var(--gold);outline-offset:2px}
+.shot{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:2px dashed var(--line);border-radius:14px;padding:26px 14px;cursor:pointer;text-align:center;color:var(--muted)}
+.shot strong{color:var(--ink);font-size:1.05rem}
+.shot input{position:absolute;opacity:0;width:1px;height:1px}
+#preview{max-height:220px;border-radius:10px;object-fit:contain;align-self:center}
+.status{font-size:.92rem;color:var(--muted)}
+.status.err{color:var(--bad)}
+.hits{display:flex;flex-direction:column;gap:8px}
+.hit{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.hit .lbl{font-size:.88rem;color:var(--muted);min-width:0;overflow-wrap:anywhere}
+.hit .b{font-weight:700;font-variant-numeric:tabular-nums}
+.hit .r{font-family:var(--display);font-weight:800;font-size:1.6rem;color:var(--gold-ink);grid-row:span 2;text-align:right;font-variant-numeric:tabular-nums}
+.hit button{grid-column:1/-1;justify-self:start;border:0;background:transparent;color:var(--indigo);font:700 .88rem var(--body);padding:4px 0;cursor:pointer}
+.list-head{display:flex;justify-content:space-between;align-items:baseline}
+.list-head h2{font-family:var(--display);font-size:1.25rem;margin:0}
+.list-head button{border:0;background:transparent;color:var(--muted);font:600 .85rem var(--body);cursor:pointer}
+ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+li{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+li .n{color:var(--muted);font-size:.9rem;min-width:0;overflow-wrap:anywhere}
+li .m{font-weight:700}
+li button{border:0;background:transparent;color:var(--muted);font-size:1.1rem;cursor:pointer;padding:2px 6px}
+.total{display:flex;justify-content:space-between;align-items:baseline;padding-top:8px;gap:10px;flex-wrap:wrap}
+.total .t-thb{color:var(--muted);font-variant-numeric:tabular-nums}
+.total .t-myr{font-family:var(--display);font-weight:800;font-size:1.9rem;font-variant-numeric:tabular-nums}
+.empty{color:var(--muted);font-size:.92rem}
+footer{text-align:center;font-size:.78rem;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.myr,.hit{transition:color .2s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">Baht<span>Kira</span></div>
+    <div class="by">Cikgu Suhaili</div>
+  </header>
+
+  <section class="rate" aria-label="Kadar tukaran">
+    <div class="rate-top">
+      <div>
+        <div class="rate-lbl">Kadar digunakan</div>
+        <div class="rate-val" id="rateText">RM1 = ฿8.19</div>
+      </div>
+      <button id="editRate" type="button">Tukar kadar</button>
+    </div>
+    <div class="rate-edit" id="rateBox" hidden>
+      <label for="rateIn">RM1 =&nbsp;฿</label>
+      <input id="rateIn" type="text" inputmode="decimal" autocomplete="off">
+      <button id="saveRate" type="button">Simpan</button>
+    </div>
+    <div class="rate-note" id="rateNote">Kadar ikut tukaran cikgu: ฿10,000 = RM1,221. Tekan Tukar kadar jika dapat kadar baru di kaunter.</div>
+  </section>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tabType" aria-selected="true" aria-controls="paneType">Taip harga</button>
+    <button role="tab" id="tabScan" aria-selected="false" aria-controls="paneScan">Imbas tanda harga</button>
+  </div>
+
+  <section class="card" id="paneType" role="tabpanel" aria-labelledby="tabType">
+    <div>
+      <label class="field-lbl" for="thb">Harga dalam baht</label>
+      <div class="thb-in"><span class="sym">฿</span><input id="thb" type="text" inputmode="decimal" autocomplete="off" value="350" aria-describedby="myrOut"></div>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="result">
+      <div class="field-lbl">Dalam ringgit</div>
+      <div class="myr" id="myrOut">RM 42.74</div>
+    </div>
+    <div class="tip" id="tip">Cara cepat dalam kepala: bahagi 8, kemudian kurangkan sikit.</div>
+    <div class="row">
+      <button class="btn" id="addType" type="button">Tambah ke senarai</button>
+      <button class="btn ghost" id="clearType" type="button">Kosongkan</button>
+    </div>
+  </section>
+
+  <section class="card" id="paneScan" role="tabpanel" aria-labelledby="tabScan" hidden>
+    <label class="shot" for="photo">
+      <input id="photo" type="file" accept="image/jpeg,image/png,image/webp" capture="environment">
+      <strong>Ambil gambar tanda harga</strong>
+      <span>Halakan kamera pada harga, pastikan nombor jelas dan tidak kabur.</span>
+    </label>
+    <img id="preview" alt="Gambar tanda harga" hidden>
+    <div class="status" id="scanStatus">Harga akan dibaca terus dari gambar dan ditukar ke RM.</div>
+    <div class="hits" id="hits"></div>
+  </section>
+
+  <section class="card" aria-label="Senarai belanja">
+    <div class="list-head"><h2>Senarai belanja</h2><button id="clearList" type="button">Padam semua</button></div>
+    <ul id="list"></ul>
+    <div class="empty" id="emptyList">Contoh di atas: ฿350 ≈ RM43. Tekan "Tambah ke senarai" untuk kira jumlah belanja hari ini.</div>
+    <div class="total"><span class="t-thb" id="totThb">฿0</span><span class="t-myr" id="totMyr">RM 0.00</span></div>
+  </section>
+
+  <footer>BahtKira · dibina untuk Cikgu Suhaili</footer>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const store = {
+    get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
+    set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  };
+  let bahtPerRm = Number(store.get("bk_rate", 8.19)) || 8.19;
+  let items = store.get("bk_list", []);
+  if(!Array.isArray(items)) items = [];
+
+  const fmtRM = n => "RM " + n.toLocaleString("en-MY",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmtB = n => "฿" + n.toLocaleString("en-US",{maximumFractionDigits:2});
+  const toRM = b => b / bahtPerRm;
+  const parse = s => { const n = parseFloat(String(s).replace(/[^0-9.]/g,"")); return isFinite(n) ? n : 0; };
+
+  function renderRate(){
+    $("rateText").textContent = "RM1 = ฿" + bahtPerRm.toFixed(2) + "  ·  ฿100 = " + fmtRM(toRM(100));
+    $("rateIn").value = bahtPerRm.toFixed(2);
+  }
+  $("editRate").onclick = () => { $("rateBox").hidden = !$("rateBox").hidden; if(!$("rateBox").hidden) $("rateIn").focus(); };
+  function saveRate(){
+    const v = parse($("rateIn").value);
+    if(v < 3 || v > 20){ $("rateNote").textContent = "Kadar itu nampak pelik. Masukkan berapa baht untuk RM1, contoh 8.10."; return; }
+    bahtPerRm = v; store.set("bk_rate", v);
+    $("rateBox").hidden = true;
+    $("rateNote").textContent = "Kadar disimpan. Semua kiraan kini guna RM1 = ฿" + v.toFixed(2) + ".";
+    renderRate(); calc(); renderList(); rerenderHits();
+  }
+  $("saveRate").onclick = saveRate;
+  $("rateIn").addEventListener("keydown", e => { if(e.key === "Enter") saveRate(); });
+
+  // Typing mode
+  [20,50,100,250,500,1000].forEach(v => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.type = "button"; b.textContent = "฿" + v;
+    b.onclick = () => { $("thb").value = v; calc(); };
+    $("chips").append(b);
+  });
+  function calc(){
+    const b = parse($("thb").value);
+    $("myrOut").textContent = fmtRM(toRM(b));
+    $("tip").textContent = b > 0
+      ? "Anggaran cepat: " + fmtB(b) + " ÷ 8 = RM" + (b/8).toFixed(0) + ", harga sebenar kurang sikit."
+      : "Cara cepat dalam kepala: bahagi 8, kemudian kurangkan sikit.";
+  }
+  $("thb").addEventListener("input", calc);
+  $("thb").addEventListener("keydown", e => { if(e.key === "Enter") $("addType").click(); });
+  $("addType").onclick = () => { const b = parse($("thb").value); if(b > 0){ addItem(b, ""); } };
+  $("clearType").onclick = () => { $("thb").value = ""; calc(); $("thb").focus(); };
+
+  // List
+  function addItem(baht, label){ items.push({baht, label: label || ""}); store.set("bk_list", items); renderList(); }
+  function renderList(){
+    const ul = $("list"); ul.textContent = "";
+    let tot = 0;
+    items.forEach((it, i) => {
+      tot += it.baht;
+      const li = document.createElement("li");
+      const n = document.createElement("span"); n.className = "n"; n.textContent = (it.label ? it.label + " · " : "") + fmtB(it.baht);
+      const m = document.createElement("span"); m.className = "m"; m.textContent = fmtRM(toRM(it.baht));
+      const x = document.createElement("button"); x.type = "button"; x.setAttribute("aria-label","Buang"); x.textContent = "×";
+      x.onclick = () => { items.splice(i,1); store.set("bk_list", items); renderList(); };
+      li.append(n, m, x); ul.append(li);
+    });
+    $("emptyList").hidden = items.length > 0;
+    $("clearList").hidden = items.length === 0;
+    $("totThb").textContent = "Jumlah " + fmtB(tot);
+    $("totMyr").textContent = fmtRM(toRM(tot));
+  }
+  $("clearList").onclick = () => { items = []; store.set("bk_list", items); renderList(); };
+
+  // Tabs
+  function showTab(scan){
+    $("tabType").setAttribute("aria-selected", String(!scan));
+    $("tabScan").setAttribute("aria-selected", String(scan));
+    $("paneType").hidden = scan; $("paneScan").hidden = !scan;
+  }
+  $("tabType").onclick = () => showTab(false);
+  $("tabScan").onclick = () => showTab(true);
+
+  // Scan mode
+  let sample = null, lastHits = [];
+  const status = (t, err) => { $("scanStatus").textContent = t; $("scanStatus").classList.toggle("err", !!err); };
+  if(window.claude && typeof window.claude.use === "function"){
+    window.claude.use("sample").then(async s => {
+      sample = s;
+      if(!s){ status("Imbasan tidak tersedia di sini. Guna tab Taip harga.", true); return; }
+      const caps = await s.limits().catch(() => null);
+      if(!caps || !caps.images){ sample = null; status("Imbasan gambar tidak tersedia di sini. Guna tab Taip harga.", true); }
+    }).catch(() => {});
+  }
+  function rerenderHits(){
+    const box = $("hits"); box.textContent = "";
+    lastHits.forEach(h => {
+      const d = document.createElement("div"); d.className = "hit";
+      const l = document.createElement("div"); l.className = "lbl"; l.textContent = h.label || "Harga";
+      const r = document.createElement("div"); r.className = "r"; r.textContent = fmtRM(toRM(h.baht));
+      const b = document.createElement("div"); b.className = "b"; b.textContent = fmtB(h.baht);
+      const add = document.createElement("button"); add.type = "button"; add.textContent = "+ Tambah ke senarai";
+      add.onclick = () => { addItem(h.baht, h.label); add.textContent = "Ditambah ✓"; add.disabled = true; };
+      d.append(l, r, b, add); box.append(d);
+    });
+  }
+  const msgFor = code => ({
+    not_granted: "Kebenaran tidak diberi, jadi gambar tidak boleh dibaca. Guna tab Taip harga.",
+    rate_limited: "Terlalu banyak imbasan sekaligus. Tunggu sebentar dan cuba lagi.",
+    image_rejected: "Gambar tidak dapat dibuka. Cuba ambil gambar baru.",
+    session_expired: "Sila log masuk semula ke Claude, kemudian cuba lagi.",
+    invalid_json: "Harga tidak dapat dibaca dengan pasti. Ambil gambar lebih dekat dan cuba lagi."
+  })[code] || "Imbasan gagal. Cuba ambil gambar sekali lagi.";
+
+  $("photo").addEventListener("change", async e => {
+    const f = e.target.files && e.target.files[0];
+    if(!f) return;
+    const url = URL.createObjectURL(f);
+    $("preview").src = url; $("preview").hidden = false;
+    lastHits = []; rerenderHits();
+    if(!sample){ status("Imbasan tidak tersedia di sini. Taip harga dalam tab Taip harga.", true); return; }
+    status("Membaca harga dari gambar…");
+    try{
+      const res = await sample.json(
+        'This is a photo of a price tag, menu or shelf label taken in Thailand. Find every price shown in Thai baht (฿, THB, "บาท", or a plain number that is clearly a price). ' +
+        'Reply with only a JSON object: {"prices":[{"label":"short item name in Malay or English, or \\"\\" if unknown","baht":123.5}]}. ' +
+        'Use the final selling price (if a discounted price is shown, use the discounted one and put "harga diskaun" in the label). Ignore weights, barcodes, dates and phone numbers. If no price is visible, reply {"prices":[]}.',
+        { images: f }
+      );
+      const list = (res && Array.isArray(res.prices) ? res.prices : [])
+        .map(p => ({ label: String(p.label || "").slice(0,60), baht: Number(p.baht) }))
+        .filter(p => isFinite(p.baht) && p.baht > 0).slice(0, 8);
+      lastHits = list; rerenderHits();
+      status(list.length ? "Jumpa " + list.length + " harga. Semak nombornya sama dengan tanda harga." : "Tiada harga dijumpai. Ambil gambar lebih dekat pada nombor harga.", !list.length);
+    }catch(err){
+      status(msgFor(err && err.code), true);
+      if(err && (err.code === "not_granted" || err.code === "sampling_disabled" || err.code === "images_unavailable")) sample = null;
+    }
+    e.target.value = "";
+  });
+
+  renderRate(); calc(); renderList();
+})();
+</script>
+
+</body>
+</html>
