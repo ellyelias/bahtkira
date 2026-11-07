@@ -47,8 +47,8 @@ header{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .rate-edit{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:600}
 .rate-edit input{width:7.5em;padding:8px 10px;border-radius:8px;border:0;font:600 1.05rem var(--body);background:#fff;color:#18213a}
 .rate-note{font-size:.8rem;opacity:.85}
-.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
-.tabs button{border:0;background:transparent;color:var(--muted);font:700 1rem var(--body);padding:11px;border-radius:9px;cursor:pointer}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
+.tabs button{border:0;background:transparent;color:var(--muted);font:700 .95rem var(--body);padding:11px 4px;border-radius:9px;cursor:pointer}
 .tabs button[aria-selected="true"]{background:var(--gold);color:#241800}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px}
 .field-lbl{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
@@ -79,6 +79,17 @@ button:focus-visible,input:focus-visible,label:focus-within{outline:3px solid va
 .hit .r{font-family:var(--display);font-weight:800;font-size:1.6rem;color:var(--gold-ink);grid-row:span 2;text-align:right;font-variant-numeric:tabular-nums}
 .hit .acts{grid-column:1/-1;display:flex;gap:16px;flex-wrap:wrap}
 .hit button{border:0;background:transparent;color:var(--indigo);font:700 .88rem var(--body);padding:4px 0;cursor:pointer}
+.seg{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.seg .field-lbl{margin-right:4px}
+.seg button{border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:7px 14px;font:600 .9rem var(--body);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.tr-list{display:flex;flex-direction:column;gap:8px}
+.tr{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.tr .th{font-size:.9rem;color:var(--muted);overflow-wrap:anywhere}
+.tr .tx{font-size:1.15rem;font-weight:700;overflow-wrap:anywhere}
+.tr .px{font-size:.9rem;color:var(--gold-ink);font-weight:700;font-variant-numeric:tabular-nums}
+.gt{color:var(--indigo);font-weight:700;font-size:.95rem}
+#trPreview{max-height:220px;border-radius:10px;object-fit:contain;align-self:center}
 .list-head{display:flex;justify-content:space-between;align-items:baseline}
 .list-head h2{font-family:var(--display);font-size:1.25rem;margin:0}
 .list-head button{border:0;background:transparent;color:var(--muted);font:600 .85rem var(--body);cursor:pointer}
@@ -119,7 +130,8 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
 
   <div class="tabs" role="tablist">
     <button role="tab" id="tabType" aria-selected="true" aria-controls="paneType">Taip harga</button>
-    <button role="tab" id="tabScan" aria-selected="false" aria-controls="paneScan">Imbas tanda harga</button>
+    <button role="tab" id="tabScan" aria-selected="false" aria-controls="paneScan">Imbas harga</button>
+    <button role="tab" id="tabTr" aria-selected="false" aria-controls="paneTr">Terjemah</button>
   </div>
 
   <section class="card" id="paneType" role="tabpanel" aria-labelledby="tabType">
@@ -148,6 +160,24 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     <img id="preview" alt="Gambar tanda harga" hidden>
     <div class="status" id="scanStatus">Harga dibaca terus dari gambar dan ditukar ke RM. Semak nombornya sebelum tambah ke senarai.</div>
     <div class="hits" id="hits"></div>
+  </section>
+
+
+  <section class="card" id="paneTr" role="tabpanel" aria-labelledby="tabTr" hidden>
+    <div class="seg" role="group" aria-label="Terjemah ke">
+      <span class="field-lbl">Terjemah ke</span>
+      <button type="button" id="toMs" aria-pressed="true">Bahasa Melayu</button>
+      <button type="button" id="toEn" aria-pressed="false">English</button>
+    </div>
+    <label class="shot" for="trPhoto">
+      <input id="trPhoto" type="file" accept="image/jpeg,image/png,image/webp" capture="environment">
+      <strong>Ambil gambar tulisan Thai</strong>
+      <span>Menu, papan tanda, label makanan atau notis. Ambil dekat dan lurus.</span>
+    </label>
+    <img id="trPreview" alt="Gambar tulisan Thai" hidden>
+    <div class="status" id="trStatus">Tulisan Thai dalam gambar akan diterjemah baris demi baris.</div>
+    <div class="tr-list" id="trList"></div>
+    <a class="gt" id="gtLink" href="https://translate.google.com/?sl=th&amp;tl=ms&amp;op=translate" target="_blank" rel="noopener" hidden>Buka teks ini dalam Google Translate ↗</a>
   </section>
 
   <section class="card" aria-label="Senarai belanja">
@@ -233,13 +263,15 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
   $("clearList").onclick = () => { items = []; store.set("bk_list", items); renderList(); };
 
   // Tabs
-  function showTab(scan){
-    $("tabType").setAttribute("aria-selected", String(!scan));
-    $("tabScan").setAttribute("aria-selected", String(scan));
-    $("paneType").hidden = scan; $("paneScan").hidden = !scan;
+  function showTab(which){
+    const t = which === true ? "scan" : which === false ? "type" : which;
+    [["type","tabType","paneType"],["scan","tabScan","paneScan"],["tr","tabTr","paneTr"]].forEach(([k,tb,pn]) => {
+      $(tb).setAttribute("aria-selected", String(k === t)); $(pn).hidden = k !== t;
+    });
   }
-  $("tabType").onclick = () => showTab(false);
-  $("tabScan").onclick = () => showTab(true);
+  $("tabType").onclick = () => showTab("type");
+  $("tabScan").onclick = () => showTab("scan");
+  $("tabTr").onclick = () => showTab("tr");
 
   // Scan mode
   let sample = null, lastHits = [];
@@ -346,6 +378,93 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     }
   }
 
+
+
+  // Translate Thai text from a photo
+  let trLang = store.get("bk_lang", "ms") === "en" ? "en" : "ms";
+  const trStatus = (t, err) => { $("trStatus").textContent = t; $("trStatus").classList.toggle("err", !!err); };
+  function setLang(l){ trLang = l; store.set("bk_lang", l); $("toMs").setAttribute("aria-pressed", String(l === "ms")); $("toEn").setAttribute("aria-pressed", String(l === "en")); }
+  $("toMs").onclick = () => setLang("ms"); $("toEn").onclick = () => setLang("en"); setLang(trLang);
+  const langName = () => trLang === "en" ? "English" : "Malay (Bahasa Melayu)";
+  function renderTr(rows, thaiText){
+    const box = $("trList"); box.textContent = "";
+    rows.forEach(r => {
+      const d = document.createElement("div"); d.className = "tr";
+      const tx = document.createElement("div"); tx.className = "tx"; tx.textContent = r.tr || "—";
+      const th = document.createElement("div"); th.className = "th"; th.textContent = r.th || "";
+      d.append(tx, th);
+      if(r.baht > 0){ const px = document.createElement("div"); px.className = "px"; px.textContent = fmtB(r.baht) + " ≈ " + fmtRM(toRM(r.baht)); d.append(px); }
+      box.append(d);
+    });
+    const gt = $("gtLink");
+    if(thaiText){ gt.href = "https://translate.google.com/?sl=th&tl=" + trLang + "&op=translate&text=" + encodeURIComponent(thaiText.slice(0, 1800)); gt.hidden = false; }
+    else gt.hidden = true;
+  }
+  let thaiWorker = null;
+  async function getThaiWorker(){
+    if(thaiWorker) return thaiWorker;
+    if(!window.Tesseract) await loadScript("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js");
+    thaiWorker = await Tesseract.createWorker("tha");
+    return thaiWorker;
+  }
+  const hasThai = t => /[\u0E00-\u0E7F]/.test(t);
+  const tidyThai = t => t.replace(/([\u0E00-\u0E7F])\s+(?=[\u0E00-\u0E7F])/g, "$1").trim();
+  async function translateLine(text){
+    const u = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(text.slice(0, 450)) + "&langpair=th|" + trLang;
+    const r = await fetch(u); const j = await r.json();
+    const out = j && j.responseData && j.responseData.translatedText;
+    if(!out || /MYMEMORY WARNING|QUERY LENGTH/i.test(out)) throw new Error("tr");
+    return out;
+  }
+  async function translateOnPhone(file){
+    trStatus("Membaca tulisan Thai… (kali pertama ambil masa 20–40 saat)");
+    let lines = [];
+    try{
+      const w = await getThaiWorker();
+      const bmp = await createImageBitmap(file);
+      const scale = Math.min(1, 1800 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement("canvas"); c.width = Math.round(bmp.width*scale); c.height = Math.round(bmp.height*scale);
+      c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+      const { data } = await w.recognize(c);
+      lines = (data.lines || []).filter(l => l.confidence > 40).map(l => tidyThai(l.text)).filter(t => hasThai(t) && t.length > 1).slice(0, 12);
+    }catch(e){ trStatus("Pembaca tulisan Thai tidak dapat dimuatkan. Pastikan ada internet dan cuba lagi.", true); return; }
+    if(!lines.length){ renderTr([], ""); trStatus("Tiada tulisan Thai dijumpai. Ambil gambar lebih dekat dan terang.", true); return; }
+    const all = lines.join("\n");
+    const rows = lines.map(th => ({ th, tr: "…" })); renderTr(rows, all);
+    trStatus("Menterjemah " + lines.length + " baris…");
+    let fails = 0;
+    for(let i = 0; i < rows.length; i++){
+      try{ rows[i].tr = await translateLine(rows[i].th); }catch(e){ rows[i].tr = "(tidak dapat diterjemah)"; fails++; }
+      renderTr(rows, all);
+    }
+    trStatus(fails === rows.length
+      ? "Terjemahan tidak tersedia sekarang. Tekan pautan Google Translate di bawah."
+      : "Siap. Terjemahan automatik mungkin tidak tepat sepenuhnya; semak dengan Google Translate jika ragu.", fails === rows.length);
+  }
+  $("trPhoto").addEventListener("change", async e => {
+    const f = e.target.files && e.target.files[0];
+    if(!f) return;
+    $("trPreview").src = URL.createObjectURL(f); $("trPreview").hidden = false;
+    renderTr([], "");
+    if(!sample){ await translateOnPhone(f); e.target.value = ""; return; }
+    trStatus("Membaca dan menterjemah…");
+    try{
+      const res = await sample.json(
+        "This photo was taken in Thailand. Read all the Thai text in it (menus, signs, labels, notices) and translate each line or item into " + langName() + ". " +
+        'Reply with only a JSON object: {"lines":[{"thai":"original Thai text","translation":"natural translation","baht":number or null}]}. ' +
+        "Keep the order as it appears. For food, translate the dish meaningfully (e.g. what it is) rather than literally. If a line shows a price in baht, put the number in baht. If there is no Thai text, reply {\"lines\":[]}.",
+        { images: f }
+      );
+      const rows = (res && Array.isArray(res.lines) ? res.lines : []).slice(0, 30)
+        .map(l => ({ th: String(l.thai || ""), tr: String(l.translation || ""), baht: Number(l.baht) || 0 }));
+      renderTr(rows, rows.map(r => r.th).join("\n"));
+      trStatus(rows.length ? "Siap. " + rows.length + " baris diterjemah." : "Tiada tulisan Thai dijumpai. Ambil gambar lebih dekat.", !rows.length);
+    }catch(err){
+      if(err && (err.code === "not_granted" || err.code === "sampling_disabled" || err.code === "images_unavailable")){ sample = null; await translateOnPhone(f); }
+      else trStatus(msgFor(err && err.code), true);
+    }
+    e.target.value = "";
+  });
 
   renderRate(); calc(); renderList();
 })();
