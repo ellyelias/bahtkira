@@ -47,7 +47,7 @@ header{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .rate-edit{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:600}
 .rate-edit input{width:7.5em;padding:8px 10px;border-radius:8px;border:0;font:600 1.05rem var(--body);background:#fff;color:#18213a}
 .rate-note{font-size:.8rem;opacity:.85}
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
 .tabs button{border:0;background:transparent;color:var(--muted);font:700 .95rem var(--body);padding:11px 4px;border-radius:9px;cursor:pointer}
 .tabs button[aria-selected="true"]{background:var(--gold);color:#241800}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:14px}
@@ -90,6 +90,14 @@ button:focus-visible,input:focus-visible,label:focus-within{outline:3px solid va
 .tr .px{font-size:.9rem;color:var(--gold-ink);font-weight:700;font-variant-numeric:tabular-nums}
 .gt{color:var(--indigo);font-weight:700;font-size:.95rem}
 #trPreview{max-height:220px;border-radius:10px;object-fit:contain;align-self:center}
+.mic{display:flex;align-items:center;justify-content:center;gap:12px;border:0;border-radius:16px;padding:22px 16px;background:var(--indigo);color:var(--surface);font:700 1.15rem var(--body);cursor:pointer}
+.mic-dot{width:16px;height:16px;border-radius:50%;background:var(--gold);flex:none}
+.mic[aria-pressed="true"]{background:var(--bad)}
+.mic[aria-pressed="true"] .mic-dot{background:#fff}
+@media (prefers-reduced-motion:no-preference){.mic[aria-pressed="true"] .mic-dot{animation:pulse 1.2s ease-in-out infinite}}
+@keyframes pulse{50%{transform:scale(1.5);opacity:.5}}
+.live{font-size:1.05rem;color:var(--muted);font-style:italic;overflow-wrap:anywhere}
+.linkbtn{align-self:flex-start;border:0;background:transparent;color:var(--muted);font:600 .88rem var(--body);cursor:pointer;padding:0}
 .list-head{display:flex;justify-content:space-between;align-items:baseline}
 .list-head h2{font-family:var(--display);font-size:1.25rem;margin:0}
 .list-head button{border:0;background:transparent;color:var(--muted);font:600 .85rem var(--body);cursor:pointer}
@@ -129,9 +137,10 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
   </section>
 
   <div class="tabs" role="tablist">
-    <button role="tab" id="tabType" aria-selected="true" aria-controls="paneType">Taip harga</button>
-    <button role="tab" id="tabScan" aria-selected="false" aria-controls="paneScan">Imbas harga</button>
+    <button role="tab" id="tabType" aria-selected="true" aria-controls="paneType">Taip</button>
+    <button role="tab" id="tabScan" aria-selected="false" aria-controls="paneScan">Imbas</button>
     <button role="tab" id="tabTr" aria-selected="false" aria-controls="paneTr">Terjemah</button>
+    <button role="tab" id="tabHear" aria-selected="false" aria-controls="paneHear">Dengar</button>
   </div>
 
   <section class="card" id="paneType" role="tabpanel" aria-labelledby="tabType">
@@ -178,6 +187,22 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     <div class="status" id="trStatus">Tulisan Thai dalam gambar akan diterjemah baris demi baris.</div>
     <div class="tr-list" id="trList"></div>
     <a class="gt" id="gtLink" href="https://translate.google.com/?sl=th&amp;tl=ms&amp;op=translate" target="_blank" rel="noopener" hidden>Buka teks ini dalam Google Translate ↗</a>
+  </section>
+
+  <section class="card" id="paneHear" role="tabpanel" aria-labelledby="tabHear" hidden>
+    <div class="seg" role="group" aria-label="Terjemah ke">
+      <span class="field-lbl">Terjemah ke</span>
+      <button type="button" id="hToMs" aria-pressed="true">Bahasa Melayu</button>
+      <button type="button" id="hToEn" aria-pressed="false">English</button>
+    </div>
+    <button type="button" class="mic" id="micBtn" aria-pressed="false">
+      <span class="mic-dot" aria-hidden="true"></span>
+      <span id="micLbl">Tekan untuk mula dengar</span>
+    </button>
+    <div class="status" id="hearStatus">Halakan telefon kepada orang yang bercakap Thai. Apa yang mereka cakap akan ditulis dan diterjemah.</div>
+    <div class="live" id="liveThai" hidden></div>
+    <div class="tr-list" id="hearList"></div>
+    <button type="button" class="linkbtn" id="hearClear" hidden>Padam perbualan</button>
   </section>
 
   <section class="card" aria-label="Senarai belanja">
@@ -265,13 +290,14 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
   // Tabs
   function showTab(which){
     const t = which === true ? "scan" : which === false ? "type" : which;
-    [["type","tabType","paneType"],["scan","tabScan","paneScan"],["tr","tabTr","paneTr"]].forEach(([k,tb,pn]) => {
+    [["type","tabType","paneType"],["scan","tabScan","paneScan"],["tr","tabTr","paneTr"],["hear","tabHear","paneHear"]].forEach(([k,tb,pn]) => {
       $(tb).setAttribute("aria-selected", String(k === t)); $(pn).hidden = k !== t;
     });
   }
   $("tabType").onclick = () => showTab("type");
   $("tabScan").onclick = () => showTab("scan");
   $("tabTr").onclick = () => showTab("tr");
+  $("tabHear").onclick = () => showTab("hear");
 
   // Scan mode
   let sample = null, lastHits = [];
@@ -383,8 +409,14 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
   // Translate Thai text from a photo
   let trLang = store.get("bk_lang", "ms") === "en" ? "en" : "ms";
   const trStatus = (t, err) => { $("trStatus").textContent = t; $("trStatus").classList.toggle("err", !!err); };
-  function setLang(l){ trLang = l; store.set("bk_lang", l); $("toMs").setAttribute("aria-pressed", String(l === "ms")); $("toEn").setAttribute("aria-pressed", String(l === "en")); }
-  $("toMs").onclick = () => setLang("ms"); $("toEn").onclick = () => setLang("en"); setLang(trLang);
+  function setLang(l){
+    trLang = l; store.set("bk_lang", l);
+    ["toMs","hToMs"].forEach(id => $(id).setAttribute("aria-pressed", String(l === "ms")));
+    ["toEn","hToEn"].forEach(id => $(id).setAttribute("aria-pressed", String(l === "en")));
+  }
+  $("toMs").onclick = $("hToMs").onclick = () => setLang("ms");
+  $("toEn").onclick = $("hToEn").onclick = () => setLang("en");
+  setLang(trLang);
   const langName = () => trLang === "en" ? "English" : "Malay (Bahasa Melayu)";
   function renderTr(rows, thaiText){
     const box = $("trList"); box.textContent = "";
@@ -465,6 +497,72 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     }
     e.target.value = "";
   });
+
+
+  // Listen to spoken Thai, write it down and translate
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const hearStatus = (t, err) => { $("hearStatus").textContent = t; $("hearStatus").classList.toggle("err", !!err); };
+  const PUBLIC_URL = "ellyelias.github.io/bahtkira";
+  let rec = null, listening = false, wantListen = false;
+  const heard = [];
+  function renderHeard(){
+    const box = $("hearList"); box.textContent = "";
+    heard.slice().reverse().forEach(r => {
+      const d = document.createElement("div"); d.className = "tr";
+      const tx = document.createElement("div"); tx.className = "tx"; tx.textContent = r.tr;
+      const th = document.createElement("div"); th.className = "th"; th.textContent = r.th;
+      d.append(tx, th); box.append(d);
+    });
+    $("hearClear").hidden = heard.length === 0;
+  }
+  $("hearClear").onclick = () => { heard.length = 0; renderHeard(); };
+  async function translateText(th){
+    if(sample){
+      try{ const { text } = await sample("Translate this spoken Thai into natural " + langName() + ". Reply with only the translation.\n\n" + th, { modelTier: "quick" }); return text.trim(); }catch(e){}
+    }
+    return translateLine(th);
+  }
+  function setMic(on){
+    listening = on;
+    $("micBtn").setAttribute("aria-pressed", String(on));
+    $("micLbl").textContent = on ? "Sedang dengar… tekan untuk berhenti" : "Tekan untuk mula dengar";
+  }
+  function startRec(){
+    rec = new SR();
+    rec.lang = "th-TH"; rec.interimResults = true; rec.continuous = true; rec.maxAlternatives = 1;
+    rec.onstart = () => { setMic(true); hearStatus("Sedang dengar. Minta mereka bercakap dengan jelas, dekat dengan telefon."); };
+    rec.onresult = ev => {
+      let interim = "";
+      for(let i = ev.resultIndex; i < ev.results.length; i++){
+        const r = ev.results[i], t = r[0].transcript.trim();
+        if(r.isFinal && t){
+          const row = { th: t, tr: "Menterjemah…" }; heard.push(row); renderHeard();
+          translateText(t).then(x => { row.tr = x; }).catch(() => { row.tr = "(tidak dapat diterjemah, sila cuba lagi)"; }).finally(renderHeard);
+        } else interim += t;
+      }
+      $("liveThai").textContent = interim; $("liveThai").hidden = !interim;
+    };
+    rec.onerror = ev => {
+      if(ev.error === "not-allowed" || ev.error === "service-not-allowed"){
+        wantListen = false;
+        hearStatus(window.claude ? "Mikrofon tidak dibenarkan di dalam Claude. Buka " + PUBLIC_URL + " dalam Chrome untuk guna fungsi Dengar." : "Mikrofon tidak dibenarkan. Tekan ikon kunci di bar alamat Chrome dan benarkan Mikrofon.", true);
+      } else if(ev.error === "network"){ wantListen = false; hearStatus("Fungsi Dengar perlukan internet. Semak sambungan dan cuba lagi.", true); }
+      else if(ev.error === "language-not-supported"){ wantListen = false; hearStatus("Telefon ini belum menyokong bahasa Thai untuk pengecaman suara.", true); }
+    };
+    rec.onend = () => {
+      $("liveThai").hidden = true;
+      if(wantListen){ try{ rec.start(); return; }catch(e){} }
+      setMic(false);
+      if(!$("hearStatus").classList.contains("err")) hearStatus(heard.length ? "Berhenti. Tekan semula untuk dengar lagi." : "Tiada suara dikesan. Tekan dan cuba lagi.");
+    };
+    rec.start();
+  }
+  $("micBtn").onclick = () => {
+    if(!SR){ hearStatus("Browser ini tidak menyokong pengecaman suara. Buka " + PUBLIC_URL + " dalam Chrome di telefon Android.", true); return; }
+    if(listening){ wantListen = false; try{ rec.stop(); }catch(e){} return; }
+    wantListen = true; hearStatus("Memulakan mikrofon…");
+    try{ startRec(); }catch(e){ wantListen = false; hearStatus("Mikrofon tidak dapat dimulakan. Cuba sekali lagi.", true); }
+  };
 
   renderRate(); calc(); renderList();
 })();
