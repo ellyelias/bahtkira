@@ -2,7 +2,7 @@
   "id": "./?app=bahtkira-pink",
   "name": "BahtKira",
   "short_name": "BahtKira",
-  "description": "Penukar harga baht ke ringgit",
+  "description": "Thai baht to Malaysian ringgit converter",
   "start_url": "./?app=bahtkira-pink",
   "scope": "./",
   "display": "standalone",
