@@ -108,12 +108,17 @@ button:focus-visible,input:focus-visible,label:focus-within{outline:3px solid va
 .live{font-size:1.05rem;color:var(--muted);font-style:italic;overflow-wrap:anywhere}
 .linkbtn{align-self:flex-start;border:0;background:transparent;color:var(--muted);font:600 .88rem var(--body);cursor:pointer;padding:0}
 .cam{position:relative;border-radius:14px;overflow:hidden;background:#000;aspect-ratio:3/4;max-height:62vh;max-width:100%}
-.cam video{width:100%;height:100%;object-fit:cover;display:block}
+.cam video{width:100%;height:100%;object-fit:cover;display:block;transform-origin:50% 50%}
 .aim{position:absolute;left:10%;right:10%;top:32%;height:28%;border:3px solid var(--gold);border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
 .cam-read{position:absolute;left:12px;right:12px;bottom:12px;background:rgba(15,20,36,.88);color:#fff;border-radius:12px;padding:10px 14px;display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
 .cam-b{font-weight:600;font-variant-numeric:tabular-nums;opacity:.85}
 .cam-r{font-family:var(--display);font-weight:800;font-size:2rem;color:#f2b632;font-variant-numeric:tabular-nums}
 .cam-read.guess .cam-r{color:#c9cfdd}
+.zoom{display:flex;align-items:center;gap:10px}
+.zoom input{flex:1;min-width:0;accent-color:var(--gold)}
+.zbtn{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:700 1.4rem var(--body);cursor:pointer;flex:none}
+.zval{min-width:3.2em;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.cam-hint{position:absolute;left:12px;right:12px;top:12px;text-align:center;background:rgba(15,20,36,.8);color:#fff;border-radius:10px;padding:6px 10px;font-size:.9rem;font-weight:600}
 .list-head{display:flex;justify-content:space-between;align-items:baseline}
 .list-head h2{font-family:var(--display);font-size:1.25rem;margin:0}
 .list-head button{border:0;background:transparent;color:var(--muted);font:600 .85rem var(--body);cursor:pointer}
@@ -181,10 +186,18 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     <div class="cam" id="cam" hidden>
       <video id="camVideo" playsinline muted autoplay></video>
       <div class="aim" aria-hidden="true"></div>
+      <div class="cam-hint" id="camHint" hidden>Too far — zoom in or move closer</div>
       <div class="cam-read" id="camRead" aria-live="polite">
         <span class="cam-b" id="camB">Point at a price</span>
         <span class="cam-r" id="camR">RM —</span>
       </div>
+    </div>
+    <div class="zoom" id="zoomBox" hidden>
+      <label for="zoom" class="field-lbl">Zoom</label>
+      <button type="button" class="zbtn" id="zoomOut" aria-label="Zoom out">−</button>
+      <input type="range" id="zoom" min="1" max="4" step="0.1" value="1">
+      <button type="button" class="zbtn" id="zoomIn" aria-label="Zoom in">+</button>
+      <span class="zval" id="zoomVal">1.0×</span>
     </div>
     <div class="row" id="camActions" hidden>
       <button class="btn" id="camAdd" type="button" disabled>Add to list</button>
@@ -604,12 +617,34 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
 
 
   // Live camera: read the price inside the gold box and convert it continuously
-  let camStream = null, camTimer = null, camBusy = false, camLast = null, camLocked = null;
+  let camStream = null, camTimer = null, camBusy = false, camLast = null, camLocked = null, camSeen = 0, digiZoom = 1, hwZoom = null;
   const camText = (b, r, guess) => { $("camB").textContent = b; $("camR").textContent = r; $("camRead").classList.toggle("guess", !!guess); };
+  function setupZoom(){
+    const track = camStream && camStream.getVideoTracks()[0];
+    const caps = track && track.getCapabilities ? track.getCapabilities() : {};
+    const zr = $("zoom");
+    if(caps.zoom && caps.zoom.max > caps.zoom.min){
+      hwZoom = track;
+      zr.min = caps.zoom.min; zr.max = Math.min(caps.zoom.max, 8); zr.step = caps.zoom.step || 0.1;
+      zr.value = Math.min(Math.max(2, caps.zoom.min), zr.max);
+    } else { hwZoom = null; zr.min = 1; zr.max = 4; zr.step = 0.1; zr.value = 2; }
+    $("zoomBox").hidden = false;
+    applyZoom();
+  }
+  function applyZoom(){
+    const v = Number($("zoom").value);
+    $("zoomVal").textContent = v.toFixed(1) + "×";
+    camSeen = 0; camLast = null;
+    if(hwZoom){ digiZoom = 1; $("camVideo").style.transform = ""; hwZoom.applyConstraints({ advanced: [{ zoom: v }] }).catch(() => {}); }
+    else { digiZoom = v; $("camVideo").style.transform = "scale(" + v + ")"; }
+  }
+  $("zoom").addEventListener("input", applyZoom);
+  $("zoomIn").onclick = () => { const z = $("zoom"); z.value = Math.min(Number(z.max), Number(z.value) + 0.5); applyZoom(); };
+  $("zoomOut").onclick = () => { const z = $("zoom"); z.value = Math.max(Number(z.min), Number(z.value) - 0.5); applyZoom(); };
   function stopCam(){
     clearInterval(camTimer); camTimer = null;
     if(camStream){ camStream.getTracks().forEach(t => t.stop()); camStream = null; }
-    $("cam").hidden = true; $("camActions").hidden = true; $("camBtn").hidden = false;
+    $("cam").hidden = true; $("camActions").hidden = true; $("zoomBox").hidden = true; $("camBtn").hidden = false;
   }
   function grabBox(){
     const v = $("camVideo"), vw = v.videoWidth, vh = v.videoHeight;
@@ -618,9 +653,12 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     const box = $("cam").getBoundingClientRect();
     const sc = Math.max(box.width / vw, box.height / vh);
     const ox = (vw*sc - box.width) / 2, oy = (vh*sc - box.height) / 2;
-    const sx = (box.width*0.10 + ox) / sc, sy = (box.height*0.32 + oy) / sc;
-    const sw = (box.width*0.80) / sc, sh = (box.height*0.28) / sc;
-    const scale = Math.min(2, 900 / sw);
+    const z = digiZoom, cx = box.width/2, cy = box.height/2;
+    const toV = (px, py) => [((px - cx)/z + cx + ox) / sc, ((py - cy)/z + cy + oy) / sc];
+    const [sx, sy] = toV(box.width*0.10, box.height*0.32);
+    const [ex, ey] = toV(box.width*0.90, box.height*0.60);
+    const sw = ex - sx, sh = ey - sy;
+    const scale = Math.min(4, 1000 / sw);
     const c = document.createElement("canvas"); c.width = Math.round(sw*scale); c.height = Math.round(sh*scale);
     const g = c.getContext("2d"); g.drawImage(v, sx, sy, sw, sh, 0, 0, c.width, c.height);
     const im = g.getImageData(0, 0, c.width, c.height), d = im.data;
@@ -649,11 +687,15 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
         }
       }
       if(!camStream) return;
-      if(best){
-        if(camLast === best.n){ camLocked = best.n; camText(fmtB(best.n), fmtRM(toRM(best.n)), false); $("camAdd").disabled = false; }
-        else if(camLocked === null) camText(fmtB(best.n) + "?", fmtRM(toRM(best.n)), true);
+      const small = best && best.h < c.height * 0.22;
+      $("camHint").hidden = !small && !!best;
+      $("camHint").textContent = best ? "Too far — zoom in or move closer" : "Fit the price inside the gold box";
+      if(best && !small){
+        camSeen = camLast === best.n ? camSeen + 1 : 1;
         camLast = best.n;
-      } else camLast = null;
+        if(camSeen >= 3){ camLocked = best.n; camText(fmtB(best.n), fmtRM(toRM(best.n)), false); $("camAdd").disabled = false; }
+        else if(camLocked === null || camLocked !== best.n) { if(camLocked === null) camText(fmtB(best.n) + "?", fmtRM(toRM(best.n)), true); }
+      } else { camLast = null; camSeen = 0; }
     }catch(e){
       stopCam(); status("The number reader could not load. Check your internet, or take a photo instead.", true);
     }finally{ camBusy = false; }
@@ -662,7 +704,7 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ status("Live camera is not supported here. Take a photo instead.", true); return; }
     status("Starting camera…");
     try{
-      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 1280 } }, audio: false });
+      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1920 } }, audio: false });
     }catch(e){
       camStream = null;
       status(window.claude ? "The live camera only works in the browser version: " + PUBLIC_URL + ". Here, take a photo instead." : "Camera blocked. Allow the camera for this site in Chrome, or take a photo instead.", true);
@@ -671,12 +713,13 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     $("camVideo").srcObject = camStream;
     $("cam").hidden = false; $("camActions").hidden = false; $("camBtn").hidden = true;
     camLast = null; camLocked = null; $("camAdd").disabled = true; camText("Point at a price", "RM —", true);
-    status("Fit the price inside the gold box and hold steady. First start takes a few seconds.");
+    status("Fit the price inside the gold box and hold steady. If it is far away, use Zoom.");
+    setupZoom();
     getWorker().catch(() => {});
     camTimer = setInterval(camTick, 700);
   };
   $("camStop").onclick = () => { stopCam(); status("Camera stopped."); };
-  $("camAdd").onclick = () => { if(camLocked){ addItem(camLocked, ""); $("camAdd").textContent = "Added ✓"; setTimeout(() => { $("camAdd").textContent = "Add to list"; }, 1200); camLocked = null; camLast = null; $("camAdd").disabled = true; camText("Point at the next price", "RM —", true); } };
+  $("camAdd").onclick = () => { if(camLocked){ addItem(camLocked, ""); $("camAdd").textContent = "Added ✓"; setTimeout(() => { $("camAdd").textContent = "Add to list"; }, 1200); camLocked = null; camLast = null; camSeen = 0; $("camAdd").disabled = true; camText("Point at the next price", "RM —", true); } };
   document.addEventListener("visibilitychange", () => { if(document.hidden && camStream) stopCam(); });
   ["tabType","tabTr","tabHear"].forEach(id => $(id).addEventListener("click", () => { if(camStream) stopCam(); }));
 
