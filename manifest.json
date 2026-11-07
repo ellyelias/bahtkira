@@ -1,13 +1,16 @@
 {
+  "id": "./?app=bahtkira-pink",
   "name": "BahtKira",
   "short_name": "BahtKira",
   "description": "Penukar harga baht ke ringgit",
-  "start_url": "./",
+  "start_url": "./?app=bahtkira-pink",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#eef1f4",
+  "background_color": "#db2777",
   "theme_color": "#db2777",
   "icons": [
-    {"src": "icon-192.png?v=2", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
-    {"src": "icon-512.png?v=2", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+    {"src": "icon-192.png?v=3", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png?v=3", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon-maskable-512.png?v=3", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
   ]
 }
