@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ms">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -9,6 +9,15 @@
 <link rel="manifest" href="manifest.json?v=3">
 <link rel="icon" type="image/png" href="favicon.png?v=2">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
+<meta name="description" content="Convert Thai baht to Malaysian ringgit: type, scan a price, translate Thai, listen.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ellyelias.github.io/bahtkira/">
+<meta property="og:title" content="BahtKira">
+<meta property="og:description" content="Thai baht to Malaysian ringgit. Type a price, scan a price tag, translate Thai text and speech.">
+<meta property="og:image" content="https://ellyelias.github.io/bahtkira/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
 </head>
 <body>
@@ -98,6 +107,13 @@ button:focus-visible,input:focus-visible,label:focus-within{outline:3px solid va
 @keyframes pulse{50%{transform:scale(1.5);opacity:.5}}
 .live{font-size:1.05rem;color:var(--muted);font-style:italic;overflow-wrap:anywhere}
 .linkbtn{align-self:flex-start;border:0;background:transparent;color:var(--muted);font:600 .88rem var(--body);cursor:pointer;padding:0}
+.cam{position:relative;border-radius:14px;overflow:hidden;background:#000;aspect-ratio:3/4;max-height:62vh;max-width:100%}
+.cam video{width:100%;height:100%;object-fit:cover;display:block}
+.aim{position:absolute;left:10%;right:10%;top:32%;height:28%;border:3px solid var(--gold);border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
+.cam-read{position:absolute;left:12px;right:12px;bottom:12px;background:rgba(15,20,36,.88);color:#fff;border-radius:12px;padding:10px 14px;display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.cam-b{font-weight:600;font-variant-numeric:tabular-nums;opacity:.85}
+.cam-r{font-family:var(--display);font-weight:800;font-size:2rem;color:#f2b632;font-variant-numeric:tabular-nums}
+.cam-read.guess .cam-r{color:#c9cfdd}
 .list-head{display:flex;justify-content:space-between;align-items:baseline}
 .list-head h2{font-family:var(--display);font-size:1.25rem;margin:0}
 .list-head button{border:0;background:transparent;color:var(--muted);font:600 .85rem var(--body);cursor:pointer}
@@ -120,99 +136,112 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     <div class="by">Cikgu Suhaili</div>
   </header>
 
-  <section class="rate" aria-label="Kadar tukaran">
+  <section class="rate" aria-label="Exchange rate">
     <div class="rate-top">
       <div>
-        <div class="rate-lbl">Kadar digunakan</div>
+        <div class="rate-lbl">Rate in use</div>
         <div class="rate-val" id="rateText">RM1 = ฿8.19</div>
       </div>
-      <button id="editRate" type="button">Tukar kadar</button>
+      <button id="editRate" type="button">Change rate</button>
     </div>
     <div class="rate-edit" id="rateBox" hidden>
       <label for="rateIn">RM1 =&nbsp;฿</label>
       <input id="rateIn" type="text" inputmode="decimal" autocomplete="off">
-      <button id="saveRate" type="button">Simpan</button>
+      <button id="saveRate" type="button">Save</button>
     </div>
-    <div class="rate-note" id="rateNote">Kadar ikut tukaran cikgu: ฿10,000 = RM1,221. Tekan Tukar kadar jika dapat kadar baru di kaunter.</div>
+    <div class="rate-note" id="rateNote">Based on a real exchange: ฿10,000 = RM1,221. Tap Change rate to enter the rate shown at your money changer.</div>
   </section>
 
   <div class="tabs" role="tablist">
-    <button role="tab" id="tabType" aria-selected="true" aria-controls="paneType">Taip</button>
-    <button role="tab" id="tabScan" aria-selected="false" aria-controls="paneScan">Imbas</button>
-    <button role="tab" id="tabTr" aria-selected="false" aria-controls="paneTr">Terjemah</button>
-    <button role="tab" id="tabHear" aria-selected="false" aria-controls="paneHear">Dengar</button>
+    <button role="tab" id="tabType" aria-selected="true" aria-controls="paneType">Type</button>
+    <button role="tab" id="tabScan" aria-selected="false" aria-controls="paneScan">Scan</button>
+    <button role="tab" id="tabTr" aria-selected="false" aria-controls="paneTr">Translate</button>
+    <button role="tab" id="tabHear" aria-selected="false" aria-controls="paneHear">Listen</button>
   </div>
 
   <section class="card" id="paneType" role="tabpanel" aria-labelledby="tabType">
     <div>
-      <label class="field-lbl" for="thb">Harga dalam baht</label>
+      <label class="field-lbl" for="thb">Price in baht</label>
       <div class="thb-in"><span class="sym">฿</span><input id="thb" type="text" inputmode="decimal" autocomplete="off" value="350" aria-describedby="myrOut"></div>
     </div>
     <div class="chips" id="chips"></div>
     <div class="result">
-      <div class="field-lbl">Dalam ringgit</div>
+      <div class="field-lbl">In ringgit</div>
       <div class="myr" id="myrOut">RM 42.74</div>
     </div>
-    <div class="tip" id="tip">Cara cepat dalam kepala: bahagi 8, kemudian kurangkan sikit.</div>
+    <div class="tip" id="tip">Quick mental maths: divide by 8, then take off a little.</div>
     <div class="row">
-      <button class="btn" id="addType" type="button">Tambah ke senarai</button>
-      <button class="btn ghost" id="clearType" type="button">Kosongkan</button>
+      <button class="btn" id="addType" type="button">Add to list</button>
+      <button class="btn ghost" id="clearType" type="button">Clear</button>
     </div>
   </section>
 
   <section class="card" id="paneScan" role="tabpanel" aria-labelledby="tabScan" hidden>
+    <button type="button" class="mic" id="camBtn"><span class="mic-dot" aria-hidden="true"></span><span>Start live camera</span></button>
+    <div class="cam" id="cam" hidden>
+      <video id="camVideo" playsinline muted autoplay></video>
+      <div class="aim" aria-hidden="true"></div>
+      <div class="cam-read" id="camRead" aria-live="polite">
+        <span class="cam-b" id="camB">Point at a price</span>
+        <span class="cam-r" id="camR">RM —</span>
+      </div>
+    </div>
+    <div class="row" id="camActions" hidden>
+      <button class="btn" id="camAdd" type="button" disabled>Add to list</button>
+      <button class="btn ghost" id="camStop" type="button">Stop camera</button>
+    </div>
     <label class="shot" for="photo">
       <input id="photo" type="file" accept="image/jpeg,image/png,image/webp" capture="environment">
-      <strong>Ambil gambar tanda harga</strong>
-      <span>Halakan kamera pada harga, pastikan nombor jelas dan tidak kabur.</span>
+      <strong>Take a photo instead</strong>
+      <span>Use this if the live camera does not work on your phone.</span>
     </label>
-    <img id="preview" alt="Gambar tanda harga" hidden>
-    <div class="status" id="scanStatus">Harga dibaca terus dari gambar dan ditukar ke RM. Semak nombornya sebelum tambah ke senarai.</div>
+    <img id="preview" alt="Price tag photo" hidden>
+    <div class="status" id="scanStatus">Point the camera at a price and see it in ringgit straight away.</div>
     <div class="hits" id="hits"></div>
   </section>
 
 
   <section class="card" id="paneTr" role="tabpanel" aria-labelledby="tabTr" hidden>
-    <div class="seg" role="group" aria-label="Terjemah ke">
-      <span class="field-lbl">Terjemah ke</span>
+    <div class="seg" role="group" aria-label="Translate to">
+      <span class="field-lbl">Translate to</span>
       <button type="button" id="toMs" aria-pressed="true">Bahasa Melayu</button>
       <button type="button" id="toEn" aria-pressed="false">English</button>
     </div>
     <label class="shot" for="trPhoto">
       <input id="trPhoto" type="file" accept="image/jpeg,image/png,image/webp" capture="environment">
-      <strong>Ambil gambar tulisan Thai</strong>
-      <span>Menu, papan tanda, label makanan atau notis. Ambil dekat dan lurus.</span>
+      <strong>Take a photo of Thai text</strong>
+      <span>Menus, signs, food labels or notices. Shoot close and straight on.</span>
     </label>
-    <img id="trPreview" alt="Gambar tulisan Thai" hidden>
-    <div class="status" id="trStatus">Tulisan Thai dalam gambar akan diterjemah baris demi baris.</div>
+    <img id="trPreview" alt="Photo of Thai text" hidden>
+    <div class="status" id="trStatus">Thai text in the photo is translated line by line.</div>
     <div class="tr-list" id="trList"></div>
-    <a class="gt" id="gtLink" href="https://translate.google.com/?sl=th&amp;tl=ms&amp;op=translate" target="_blank" rel="noopener" hidden>Semak di Google Translate ↗</a>
+    <a class="gt" id="gtLink" href="https://translate.google.com/?sl=th&amp;tl=ms&amp;op=translate" target="_blank" rel="noopener" hidden>Check in Google Translate ↗</a>
   </section>
 
   <section class="card" id="paneHear" role="tabpanel" aria-labelledby="tabHear" hidden>
-    <div class="seg" role="group" aria-label="Terjemah ke">
-      <span class="field-lbl">Terjemah ke</span>
+    <div class="seg" role="group" aria-label="Translate to">
+      <span class="field-lbl">Translate to</span>
       <button type="button" id="hToMs" aria-pressed="true">Bahasa Melayu</button>
       <button type="button" id="hToEn" aria-pressed="false">English</button>
     </div>
     <button type="button" class="mic" id="micBtn" aria-pressed="false">
       <span class="mic-dot" aria-hidden="true"></span>
-      <span id="micLbl">Tekan untuk mula dengar</span>
+      <span id="micLbl">Tap to start listening</span>
     </button>
-    <div class="status" id="hearStatus">Halakan telefon kepada orang yang bercakap Thai. Apa yang mereka cakap akan ditulis dan diterjemah.</div>
+    <div class="status" id="hearStatus">Point your phone at the person speaking Thai. What they say is written down and translated.</div>
     <div class="live" id="liveThai" hidden></div>
     <div class="tr-list" id="hearList"></div>
-    <button type="button" class="linkbtn" id="hearClear" hidden>Padam perbualan</button>
+    <button type="button" class="linkbtn" id="hearClear" hidden>Clear conversation</button>
   </section>
 
-  <section class="card" aria-label="Senarai belanja">
-    <div class="list-head"><h2>Senarai belanja</h2><button id="clearList" type="button">Padam semua</button></div>
+  <section class="card" aria-label="Shopping list">
+    <div class="list-head"><h2>Shopping list</h2><button id="clearList" type="button">Clear all</button></div>
     <ul id="list"></ul>
-    <div class="empty" id="emptyList">Contoh di atas: ฿350 ≈ RM43. Tekan "Tambah ke senarai" untuk kira jumlah belanja hari ini.</div>
+    <div class="empty" id="emptyList">Example above: ฿350 ≈ RM43. Tap "Add to list" to total up today's spending.</div>
     <div class="total"><span class="t-thb" id="totThb">฿0</span><span class="t-myr" id="totMyr">RM 0.00</span></div>
   </section>
 
-  <footer>BahtKira · dibina untuk Cikgu Suhaili</footer>
+  <footer>BahtKira · by Cikgu Suhaili</footer>
 </div>
 
 <script>
@@ -238,10 +267,10 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
   $("editRate").onclick = () => { $("rateBox").hidden = !$("rateBox").hidden; if(!$("rateBox").hidden) $("rateIn").focus(); };
   function saveRate(){
     const v = parse($("rateIn").value);
-    if(v < 3 || v > 20){ $("rateNote").textContent = "Kadar itu nampak pelik. Masukkan berapa baht untuk RM1, contoh 8.10."; return; }
+    if(v < 3 || v > 20){ $("rateNote").textContent = "That rate looks wrong. Enter how many baht you get for RM1, e.g. 8.10."; return; }
     bahtPerRm = v; store.set("bk_rate", v);
     $("rateBox").hidden = true;
-    $("rateNote").textContent = "Kadar disimpan. Semua kiraan kini guna RM1 = ฿" + v.toFixed(2) + ".";
+    $("rateNote").textContent = "Rate saved. All prices now use RM1 = ฿" + v.toFixed(2) + ".";
     renderRate(); calc(); renderList(); rerenderHits();
   }
   $("saveRate").onclick = saveRate;
@@ -258,8 +287,8 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     const b = parse($("thb").value);
     $("myrOut").textContent = fmtRM(toRM(b));
     $("tip").textContent = b > 0
-      ? "Anggaran cepat: " + fmtB(b) + " ÷ 8 = RM" + (b/8).toFixed(0) + ", harga sebenar kurang sikit."
-      : "Cara cepat dalam kepala: bahagi 8, kemudian kurangkan sikit.";
+      ? "Quick estimate: " + fmtB(b) + " ÷ 8 = RM" + (b/8).toFixed(0) + ", the real price is a little less."
+      : "Quick mental maths: divide by 8, then take off a little.";
   }
   $("thb").addEventListener("input", calc);
   $("thb").addEventListener("keydown", e => { if(e.key === "Enter") $("addType").click(); });
@@ -276,13 +305,13 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
       const li = document.createElement("li");
       const n = document.createElement("span"); n.className = "n"; n.textContent = (it.label ? it.label + " · " : "") + fmtB(it.baht);
       const m = document.createElement("span"); m.className = "m"; m.textContent = fmtRM(toRM(it.baht));
-      const x = document.createElement("button"); x.type = "button"; x.setAttribute("aria-label","Buang"); x.textContent = "×";
+      const x = document.createElement("button"); x.type = "button"; x.setAttribute("aria-label","Remove"); x.textContent = "×";
       x.onclick = () => { items.splice(i,1); store.set("bk_list", items); renderList(); };
       li.append(n, m, x); ul.append(li);
     });
     $("emptyList").hidden = items.length > 0;
     $("clearList").hidden = items.length === 0;
-    $("totThb").textContent = "Jumlah " + fmtB(tot);
+    $("totThb").textContent = "Total " + fmtB(tot);
     $("totMyr").textContent = fmtRM(toRM(tot));
   }
   $("clearList").onclick = () => { items = []; store.set("bk_list", items); renderList(); };
@@ -314,24 +343,24 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     const box = $("hits"); box.textContent = "";
     lastHits.forEach(h => {
       const d = document.createElement("div"); d.className = "hit";
-      const l = document.createElement("div"); l.className = "lbl"; l.textContent = h.label || "Harga";
+      const l = document.createElement("div"); l.className = "lbl"; l.textContent = h.label || "Price";
       const r = document.createElement("div"); r.className = "r"; r.textContent = fmtRM(toRM(h.baht));
       const b = document.createElement("div"); b.className = "b"; b.textContent = fmtB(h.baht);
-      const add = document.createElement("button"); add.type = "button"; add.textContent = "+ Tambah ke senarai";
-      add.onclick = () => { addItem(h.baht, h.label); add.textContent = "Ditambah ✓"; add.disabled = true; };
-      const fix = document.createElement("button"); fix.type = "button"; fix.textContent = "Betulkan nombor";
+      const add = document.createElement("button"); add.type = "button"; add.textContent = "+ Add to list";
+      add.onclick = () => { addItem(h.baht, h.label); add.textContent = "Added ✓"; add.disabled = true; };
+      const fix = document.createElement("button"); fix.type = "button"; fix.textContent = "Fix number";
       fix.onclick = () => { $("thb").value = h.baht; calc(); showTab(false); $("thb").focus(); };
       const acts = document.createElement("div"); acts.className = "acts"; acts.append(add, fix);
       d.append(l, r, b, acts); box.append(d);
     });
   }
   const msgFor = code => ({
-    not_granted: "Kebenaran tidak diberi, jadi gambar tidak boleh dibaca. Guna tab Taip harga.",
-    rate_limited: "Terlalu banyak imbasan sekaligus. Tunggu sebentar dan cuba lagi.",
-    image_rejected: "Gambar tidak dapat dibuka. Cuba ambil gambar baru.",
-    session_expired: "Sila log masuk semula ke Claude, kemudian cuba lagi.",
-    invalid_json: "Harga tidak dapat dibaca dengan pasti. Ambil gambar lebih dekat dan cuba lagi."
-  })[code] || "Imbasan gagal. Cuba ambil gambar sekali lagi.";
+    not_granted: "Permission was not given, so the photo cannot be read. Use the Type tab.",
+    rate_limited: "Too many scans at once. Wait a moment and try again.",
+    image_rejected: "The photo could not be opened. Take a new one.",
+    session_expired: "Sign in to Claude again, then try again.",
+    invalid_json: "The price could not be read clearly. Move closer and try again."
+  })[code] || "Scan failed. Take the photo again.";
 
   $("photo").addEventListener("change", async e => {
     const f = e.target.files && e.target.files[0];
@@ -340,19 +369,19 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     $("preview").src = url; $("preview").hidden = false;
     lastHits = []; rerenderHits();
     if(!sample){ await readOnPhone(f); e.target.value = ""; return; }
-    status("Membaca harga dari gambar…");
+    status("Reading the price…");
     try{
       const res = await sample.json(
         'This is a photo of a price tag, menu or shelf label taken in Thailand. Find every price shown in Thai baht (฿, THB, "บาท", or a plain number that is clearly a price). ' +
-        'Reply with only a JSON object: {"prices":[{"label":"short item name in Malay or English, or \\"\\" if unknown","baht":123.5}]}. ' +
-        'Use the final selling price (if a discounted price is shown, use the discounted one and put "harga diskaun" in the label). Ignore weights, barcodes, dates and phone numbers. If no price is visible, reply {"prices":[]}.',
+        'Reply with only a JSON object: {"prices":[{"label":"short item name in English, or \\"\\" if unknown","baht":123.5}]}. ' +
+        'Use the final selling price (if a discounted price is shown, use the discounted one and put "discounted price" in the label). Ignore weights, barcodes, dates and phone numbers. If no price is visible, reply {"prices":[]}.',
         { images: f }
       );
       const list = (res && Array.isArray(res.prices) ? res.prices : [])
         .map(p => ({ label: String(p.label || "").slice(0,60), baht: Number(p.baht) }))
         .filter(p => isFinite(p.baht) && p.baht > 0).slice(0, 8);
       lastHits = list; rerenderHits();
-      status(list.length ? "Jumpa " + list.length + " harga. Semak nombornya sama dengan tanda harga." : "Tiada harga dijumpai. Ambil gambar lebih dekat pada nombor harga.", !list.length);
+      status(list.length ? "Found " + list.length + " price(s). Check they match the tag." : "No price found. Move closer to the price.", !list.length);
     }catch(err){
       status(msgFor(err && err.code), true);
       if(err && (err.code === "not_granted" || err.code === "sampling_disabled" || err.code === "images_unavailable")) sample = null;
@@ -382,7 +411,7 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     return c;
   }
   async function readOnPhone(file){
-    status("Membaca nombor dalam telefon… (kali pertama ambil masa sedikit)");
+    status("Reading numbers on your phone… (the first time takes a little longer)");
     try{
       const w = await getWorker();
       const { data } = await w.recognize(await prepImage(file));
@@ -394,20 +423,20 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
         for(const t of m){
           const n = parseFloat(t.replace(/,/g, ""));
           if(!(n >= 1 && n <= 200000) || seen.has(n)) continue;
-          seen.add(n); list.push({ label: list.length ? "Nombor lain dalam gambar" : "Nombor paling besar dalam gambar", baht: n });
+          seen.add(n); list.push({ label: list.length ? "Other number in photo" : "Largest number in photo", baht: n });
         }
       }
       lastHits = list.slice(0, 6); rerenderHits();
-      status(list.length ? "Pilih nombor yang betul. Jika tersilap baca, tekan Betulkan nombor." : "Tiada nombor dijumpai. Ambil gambar lebih dekat, terang dan lurus.", !list.length);
+      status(list.length ? "Pick the right number. If it was misread, tap Fix number." : "No number found. Shoot closer, brighter and straight on.", !list.length);
     }catch(err){
-      status("Pembaca nombor tidak dapat dimuatkan. Pastikan ada internet, atau guna tab Taip harga.", true);
+      status("The number reader could not load. Check your internet, or use the Type tab.", true);
     }
   }
 
 
 
   // Translate Thai text from a photo
-  let trLang = store.get("bk_lang", "ms") === "en" ? "en" : "ms";
+  let trLang = store.get("bk_lang", "en") === "ms" ? "ms" : "en";
   const trStatus = (t, err) => { $("trStatus").textContent = t; $("trStatus").classList.toggle("err", !!err); };
   function setLang(l){
     trLang = l; store.set("bk_lang", l);
@@ -458,7 +487,7 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     return out2;
   }
   async function translateOnPhone(file){
-    trStatus("Membaca tulisan Thai… (kali pertama ambil masa 20–40 saat)");
+    trStatus("Reading Thai text… (the first time takes 20–40 seconds)");
     let lines = [];
     try{
       const w = await getThaiWorker();
@@ -468,19 +497,19 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
       c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
       const { data } = await w.recognize(c);
       lines = (data.lines || []).filter(l => l.confidence > 40).map(l => tidyThai(l.text)).filter(t => hasThai(t) && t.length > 1).slice(0, 12);
-    }catch(e){ trStatus("Pembaca tulisan Thai tidak dapat dimuatkan. Pastikan ada internet dan cuba lagi.", true); return; }
-    if(!lines.length){ renderTr([], ""); trStatus("Tiada tulisan Thai dijumpai. Ambil gambar lebih dekat dan terang.", true); return; }
+    }catch(e){ trStatus("The Thai reader could not load. Check your internet and try again.", true); return; }
+    if(!lines.length){ renderTr([], ""); trStatus("No Thai text found. Shoot closer and in better light.", true); return; }
     const all = lines.join("\n");
     const rows = lines.map(th => ({ th, tr: "…" })); renderTr(rows, all);
-    trStatus("Menterjemah " + lines.length + " baris…");
+    trStatus("Translating " + lines.length + " line(s)…");
     let fails = 0;
     await Promise.all(rows.map(async row => {
-      try{ row.tr = await translateLine(row.th); }catch(e){ row.tr = "(tidak dapat diterjemah)"; fails++; }
+      try{ row.tr = await translateLine(row.th); }catch(e){ row.tr = "(could not translate)"; fails++; }
       renderTr(rows, all);
     }));
     trStatus(fails === rows.length
-      ? "Terjemahan gagal. Semak sambungan internet dan cuba lagi."
-      : "Siap. Terjemahan automatik, jadi mungkin ada yang kurang tepat.", fails === rows.length);
+      ? "Translation failed. Check your internet and try again."
+      : "Done. Automatic translation may not be perfect.", fails === rows.length);
   }
   $("trPhoto").addEventListener("change", async e => {
     const f = e.target.files && e.target.files[0];
@@ -488,7 +517,7 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     $("trPreview").src = URL.createObjectURL(f); $("trPreview").hidden = false;
     renderTr([], "");
     if(!sample){ await translateOnPhone(f); e.target.value = ""; return; }
-    trStatus("Membaca dan menterjemah…");
+    trStatus("Reading and translating…");
     try{
       const res = await sample.json(
         "This photo was taken in Thailand. Read all the Thai text in it (menus, signs, labels, notices) and translate each line or item into " + langName() + ". " +
@@ -499,7 +528,7 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
       const rows = (res && Array.isArray(res.lines) ? res.lines : []).slice(0, 30)
         .map(l => ({ th: String(l.thai || ""), tr: String(l.translation || ""), baht: Number(l.baht) || 0 }));
       renderTr(rows, rows.map(r => r.th).join("\n"));
-      trStatus(rows.length ? "Siap. " + rows.length + " baris diterjemah." : "Tiada tulisan Thai dijumpai. Ambil gambar lebih dekat.", !rows.length);
+      trStatus(rows.length ? "Done. " + rows.length + " line(s) translated." : "No Thai text found. Move closer.", !rows.length);
     }catch(err){
       if(err && (err.code === "not_granted" || err.code === "sampling_disabled" || err.code === "images_unavailable")){ sample = null; await translateOnPhone(f); }
       else trStatus(msgFor(err && err.code), true);
@@ -534,19 +563,19 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
   function setMic(on){
     listening = on;
     $("micBtn").setAttribute("aria-pressed", String(on));
-    $("micLbl").textContent = on ? "Sedang dengar… tekan untuk berhenti" : "Tekan untuk mula dengar";
+    $("micLbl").textContent = on ? "Listening… tap to stop" : "Tap to start listening";
   }
   function startRec(){
     rec = new SR();
     rec.lang = "th-TH"; rec.interimResults = true; rec.continuous = true; rec.maxAlternatives = 1;
-    rec.onstart = () => { setMic(true); hearStatus("Sedang dengar. Minta mereka bercakap dengan jelas, dekat dengan telefon."); };
+    rec.onstart = () => { setMic(true); hearStatus("Listening. Ask them to speak clearly, close to the phone."); };
     rec.onresult = ev => {
       let interim = "";
       for(let i = ev.resultIndex; i < ev.results.length; i++){
         const r = ev.results[i], t = r[0].transcript.trim();
         if(r.isFinal && t){
-          const row = { th: t, tr: "Menterjemah…" }; heard.push(row); renderHeard();
-          translateText(t).then(x => { row.tr = x; }).catch(() => { row.tr = "(tidak dapat diterjemah, sila cuba lagi)"; }).finally(renderHeard);
+          const row = { th: t, tr: "Translating…" }; heard.push(row); renderHeard();
+          translateText(t).then(x => { row.tr = x; }).catch(() => { row.tr = "(could not translate, try again)"; }).finally(renderHeard);
         } else interim += t;
       }
       $("liveThai").textContent = interim; $("liveThai").hidden = !interim;
@@ -554,24 +583,102 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     rec.onerror = ev => {
       if(ev.error === "not-allowed" || ev.error === "service-not-allowed"){
         wantListen = false;
-        hearStatus(window.claude ? "Mikrofon tidak dibenarkan di dalam Claude. Buka " + PUBLIC_URL + " dalam Chrome untuk guna fungsi Dengar." : "Mikrofon tidak dibenarkan. Tekan ikon kunci di bar alamat Chrome dan benarkan Mikrofon.", true);
-      } else if(ev.error === "network"){ wantListen = false; hearStatus("Fungsi Dengar perlukan internet. Semak sambungan dan cuba lagi.", true); }
-      else if(ev.error === "language-not-supported"){ wantListen = false; hearStatus("Telefon ini belum menyokong bahasa Thai untuk pengecaman suara.", true); }
+        hearStatus(window.claude ? "The microphone is not allowed inside Claude. Open " + PUBLIC_URL + " in Chrome to use Listen." : "Microphone blocked. Tap the lock icon in Chrome's address bar and allow Microphone.", true);
+      } else if(ev.error === "network"){ wantListen = false; hearStatus("Listen needs the internet. Check your connection and try again.", true); }
+      else if(ev.error === "language-not-supported"){ wantListen = false; hearStatus("This phone does not support Thai speech recognition yet.", true); }
     };
     rec.onend = () => {
       $("liveThai").hidden = true;
       if(wantListen){ try{ rec.start(); return; }catch(e){} }
       setMic(false);
-      if(!$("hearStatus").classList.contains("err")) hearStatus(heard.length ? "Berhenti. Tekan semula untuk dengar lagi." : "Tiada suara dikesan. Tekan dan cuba lagi.");
+      if(!$("hearStatus").classList.contains("err")) hearStatus(heard.length ? "Stopped. Tap again to keep listening." : "No speech heard. Tap and try again.");
     };
     rec.start();
   }
   $("micBtn").onclick = () => {
-    if(!SR){ hearStatus("Browser ini tidak menyokong pengecaman suara. Buka " + PUBLIC_URL + " dalam Chrome di telefon Android.", true); return; }
+    if(!SR){ hearStatus("This browser does not support speech recognition. Open " + PUBLIC_URL + " in Chrome on Android.", true); return; }
     if(listening){ wantListen = false; try{ rec.stop(); }catch(e){} return; }
-    wantListen = true; hearStatus("Memulakan mikrofon…");
-    try{ startRec(); }catch(e){ wantListen = false; hearStatus("Mikrofon tidak dapat dimulakan. Cuba sekali lagi.", true); }
+    wantListen = true; hearStatus("Starting microphone…");
+    try{ startRec(); }catch(e){ wantListen = false; hearStatus("The microphone could not start. Try again.", true); }
   };
+
+
+  // Live camera: read the price inside the gold box and convert it continuously
+  let camStream = null, camTimer = null, camBusy = false, camLast = null, camLocked = null;
+  const camText = (b, r, guess) => { $("camB").textContent = b; $("camR").textContent = r; $("camRead").classList.toggle("guess", !!guess); };
+  function stopCam(){
+    clearInterval(camTimer); camTimer = null;
+    if(camStream){ camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+    $("cam").hidden = true; $("camActions").hidden = true; $("camBtn").hidden = false;
+  }
+  function grabBox(){
+    const v = $("camVideo"), vw = v.videoWidth, vh = v.videoHeight;
+    if(!vw || !vh) return null;
+    // Map the on-screen box (object-fit: cover) back to video pixels
+    const box = $("cam").getBoundingClientRect();
+    const sc = Math.max(box.width / vw, box.height / vh);
+    const ox = (vw*sc - box.width) / 2, oy = (vh*sc - box.height) / 2;
+    const sx = (box.width*0.10 + ox) / sc, sy = (box.height*0.32 + oy) / sc;
+    const sw = (box.width*0.80) / sc, sh = (box.height*0.28) / sc;
+    const scale = Math.min(2, 900 / sw);
+    const c = document.createElement("canvas"); c.width = Math.round(sw*scale); c.height = Math.round(sh*scale);
+    const g = c.getContext("2d"); g.drawImage(v, sx, sy, sw, sh, 0, 0, c.width, c.height);
+    const im = g.getImageData(0, 0, c.width, c.height), d = im.data;
+    let sum = 0; for(let i = 0; i < d.length; i += 4) sum += .299*d[i] + .587*d[i+1] + .114*d[i+2];
+    const mean = sum / (d.length/4);
+    for(let i = 0; i < d.length; i += 4){ const y = .299*d[i] + .587*d[i+1] + .114*d[i+2]; const v2 = y > mean ? 255 : 0; d[i] = d[i+1] = d[i+2] = v2; }
+    g.putImageData(im, 0, 0);
+    return c;
+  }
+  async function camTick(){
+    if(camBusy || !camStream) return;
+    const c = grabBox(); if(!c) return;
+    camBusy = true;
+    try{
+      const w = await getWorker();
+      const { data } = await w.recognize(c);
+      let best = null;
+      for(const wd of (data.words || [])){
+        if(wd.confidence < 55) continue;
+        const m = wd.text.match(/\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?/g) || [];
+        for(const t of m){
+          const n = parseFloat(t.replace(/,/g, ""));
+          if(!(n >= 1 && n <= 200000)) continue;
+          const h = wd.bbox.y1 - wd.bbox.y0;
+          if(!best || h > best.h) best = { n, h };
+        }
+      }
+      if(!camStream) return;
+      if(best){
+        if(camLast === best.n){ camLocked = best.n; camText(fmtB(best.n), fmtRM(toRM(best.n)), false); $("camAdd").disabled = false; }
+        else if(camLocked === null) camText(fmtB(best.n) + "?", fmtRM(toRM(best.n)), true);
+        camLast = best.n;
+      } else camLast = null;
+    }catch(e){
+      stopCam(); status("The number reader could not load. Check your internet, or take a photo instead.", true);
+    }finally{ camBusy = false; }
+  }
+  $("camBtn").onclick = async () => {
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ status("Live camera is not supported here. Take a photo instead.", true); return; }
+    status("Starting camera…");
+    try{
+      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 1280 } }, audio: false });
+    }catch(e){
+      camStream = null;
+      status(window.claude ? "The live camera only works in the browser version: " + PUBLIC_URL + ". Here, take a photo instead." : "Camera blocked. Allow the camera for this site in Chrome, or take a photo instead.", true);
+      return;
+    }
+    $("camVideo").srcObject = camStream;
+    $("cam").hidden = false; $("camActions").hidden = false; $("camBtn").hidden = true;
+    camLast = null; camLocked = null; $("camAdd").disabled = true; camText("Point at a price", "RM —", true);
+    status("Fit the price inside the gold box and hold steady. First start takes a few seconds.");
+    getWorker().catch(() => {});
+    camTimer = setInterval(camTick, 700);
+  };
+  $("camStop").onclick = () => { stopCam(); status("Camera stopped."); };
+  $("camAdd").onclick = () => { if(camLocked){ addItem(camLocked, ""); $("camAdd").textContent = "Added ✓"; setTimeout(() => { $("camAdd").textContent = "Add to list"; }, 1200); camLocked = null; camLast = null; $("camAdd").disabled = true; camText("Point at the next price", "RM —", true); } };
+  document.addEventListener("visibilitychange", () => { if(document.hidden && camStream) stopCam(); });
+  ["tabType","tabTr","tabHear"].forEach(id => $(id).addEventListener("click", () => { if(camStream) stopCam(); }));
 
   renderRate(); calc(); renderList();
 })();

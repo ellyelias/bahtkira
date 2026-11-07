@@ -1,8 +1,11 @@
 # BahtKira
 
-Penukar harga baht (THB) ke ringgit (MYR) untuk kegunaan semasa di Thailand. Dibina untuk Cikgu Suhaili.
+Thai baht (THB) to Malaysian ringgit (MYR) converter for travelling in Thailand. By Cikgu Suhaili.
 
-- **Taip harga** dalam baht, nilai RM keluar serta-merta
-- **Imbas tanda harga** dengan kamera (berfungsi apabila dibuka dalam Claude)
-- **Senarai belanja** dengan jumlah keseluruhan
-- Kadar boleh ditukar dan disimpan dalam telefon (asal: RM1 = ฿8.19)
+- **Type** a price in baht and see it in ringgit instantly
+- **Scan** prices live with the camera, or from a photo
+- **Translate** Thai text from a photo into English or Malay
+- **Listen** to spoken Thai and see it written and translated
+- **Shopping list** with a running total
+
+Live: https://ellyelias.github.io/bahtkira/
