@@ -77,7 +77,8 @@ button:focus-visible,input:focus-visible,label:focus-within{outline:3px solid va
 .hit .lbl{font-size:.88rem;color:var(--muted);min-width:0;overflow-wrap:anywhere}
 .hit .b{font-weight:700;font-variant-numeric:tabular-nums}
 .hit .r{font-family:var(--display);font-weight:800;font-size:1.6rem;color:var(--gold-ink);grid-row:span 2;text-align:right;font-variant-numeric:tabular-nums}
-.hit button{grid-column:1/-1;justify-self:start;border:0;background:transparent;color:var(--indigo);font:700 .88rem var(--body);padding:4px 0;cursor:pointer}
+.hit .acts{grid-column:1/-1;display:flex;gap:16px;flex-wrap:wrap}
+.hit button{border:0;background:transparent;color:var(--indigo);font:700 .88rem var(--body);padding:4px 0;cursor:pointer}
 .list-head{display:flex;justify-content:space-between;align-items:baseline}
 .list-head h2{font-family:var(--display);font-size:1.25rem;margin:0}
 .list-head button{border:0;background:transparent;color:var(--muted);font:600 .85rem var(--body);cursor:pointer}
@@ -145,7 +146,7 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
       <span>Halakan kamera pada harga, pastikan nombor jelas dan tidak kabur.</span>
     </label>
     <img id="preview" alt="Gambar tanda harga" hidden>
-    <div class="status" id="scanStatus">Harga akan dibaca terus dari gambar dan ditukar ke RM.</div>
+    <div class="status" id="scanStatus">Harga dibaca terus dari gambar dan ditukar ke RM. Semak nombornya sebelum tambah ke senarai.</div>
     <div class="hits" id="hits"></div>
   </section>
 
@@ -246,9 +247,9 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
   if(window.claude && typeof window.claude.use === "function"){
     window.claude.use("sample").then(async s => {
       sample = s;
-      if(!s){ status("Imbasan tidak tersedia di sini. Guna tab Taip harga.", true); return; }
+      if(!s) return;
       const caps = await s.limits().catch(() => null);
-      if(!caps || !caps.images){ sample = null; status("Imbasan gambar tidak tersedia di sini. Guna tab Taip harga.", true); }
+      if(!caps || !caps.images) sample = null;
     }).catch(() => {});
   }
   function rerenderHits(){
@@ -260,7 +261,10 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
       const b = document.createElement("div"); b.className = "b"; b.textContent = fmtB(h.baht);
       const add = document.createElement("button"); add.type = "button"; add.textContent = "+ Tambah ke senarai";
       add.onclick = () => { addItem(h.baht, h.label); add.textContent = "Ditambah ✓"; add.disabled = true; };
-      d.append(l, r, b, add); box.append(d);
+      const fix = document.createElement("button"); fix.type = "button"; fix.textContent = "Betulkan nombor";
+      fix.onclick = () => { $("thb").value = h.baht; calc(); showTab(false); $("thb").focus(); };
+      const acts = document.createElement("div"); acts.className = "acts"; acts.append(add, fix);
+      d.append(l, r, b, acts); box.append(d);
     });
   }
   const msgFor = code => ({
@@ -277,7 +281,7 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     const url = URL.createObjectURL(f);
     $("preview").src = url; $("preview").hidden = false;
     lastHits = []; rerenderHits();
-    if(!sample){ status("Imbasan tidak tersedia di sini. Taip harga dalam tab Taip harga.", true); return; }
+    if(!sample){ await readOnPhone(f); e.target.value = ""; return; }
     status("Membaca harga dari gambar…");
     try{
       const res = await sample.json(
@@ -297,6 +301,51 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     }
     e.target.value = "";
   });
+
+
+  // On-phone reader (works anywhere without Claude): Tesseract.js, digits only
+  let ocrWorker = null;
+  function loadScript(src){ return new Promise((ok, bad) => { const t = document.createElement("script"); t.src = src; t.onload = ok; t.onerror = bad; document.head.append(t); }); }
+  async function getWorker(){
+    if(ocrWorker) return ocrWorker;
+    if(!window.Tesseract) await loadScript("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js");
+    ocrWorker = await Tesseract.createWorker("eng");
+    await ocrWorker.setParameters({ tessedit_char_whitelist: "0123456789.,", tessedit_pageseg_mode: "11" });
+    return ocrWorker;
+  }
+  async function prepImage(file){
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas"); c.width = Math.round(bmp.width*scale); c.height = Math.round(bmp.height*scale);
+    const g = c.getContext("2d"); g.drawImage(bmp, 0, 0, c.width, c.height);
+    const im = g.getImageData(0, 0, c.width, c.height), d = im.data;
+    for(let i = 0; i < d.length; i += 4){ const y = .299*d[i] + .587*d[i+1] + .114*d[i+2]; const v = y > 150 ? 255 : (y < 90 ? 0 : (y-90)*4.25); d[i] = d[i+1] = d[i+2] = v; }
+    g.putImageData(im, 0, 0);
+    return c;
+  }
+  async function readOnPhone(file){
+    status("Membaca nombor dalam telefon… (kali pertama ambil masa sedikit)");
+    try{
+      const w = await getWorker();
+      const { data } = await w.recognize(await prepImage(file));
+      const words = (data.words || []).filter(x => x.confidence > 45);
+      const seen = new Set(), list = [];
+      words.sort((a,b) => (b.bbox.y1-b.bbox.y0) - (a.bbox.y1-a.bbox.y0));
+      for(const wd of words){
+        const m = wd.text.match(/\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?/g) || [];
+        for(const t of m){
+          const n = parseFloat(t.replace(/,/g, ""));
+          if(!(n >= 1 && n <= 200000) || seen.has(n)) continue;
+          seen.add(n); list.push({ label: list.length ? "Nombor lain dalam gambar" : "Nombor paling besar dalam gambar", baht: n });
+        }
+      }
+      lastHits = list.slice(0, 6); rerenderHits();
+      status(list.length ? "Pilih nombor yang betul. Jika tersilap baca, tekan Betulkan nombor." : "Tiada nombor dijumpai. Ambil gambar lebih dekat, terang dan lurus.", !list.length);
+    }catch(err){
+      status("Pembaca nombor tidak dapat dimuatkan. Pastikan ada internet, atau guna tab Taip harga.", true);
+    }
+  }
+
 
   renderRate(); calc(); renderList();
 })();
