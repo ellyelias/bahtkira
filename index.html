@@ -186,7 +186,7 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     <img id="trPreview" alt="Gambar tulisan Thai" hidden>
     <div class="status" id="trStatus">Tulisan Thai dalam gambar akan diterjemah baris demi baris.</div>
     <div class="tr-list" id="trList"></div>
-    <a class="gt" id="gtLink" href="https://translate.google.com/?sl=th&amp;tl=ms&amp;op=translate" target="_blank" rel="noopener" hidden>Buka teks ini dalam Google Translate ↗</a>
+    <a class="gt" id="gtLink" href="https://translate.google.com/?sl=th&amp;tl=ms&amp;op=translate" target="_blank" rel="noopener" hidden>Semak di Google Translate ↗</a>
   </section>
 
   <section class="card" id="paneHear" role="tabpanel" aria-labelledby="tabHear" hidden>
@@ -442,11 +442,20 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
   const hasThai = t => /[\u0E00-\u0E7F]/.test(t);
   const tidyThai = t => t.replace(/([\u0E00-\u0E7F])\s+(?=[\u0E00-\u0E7F])/g, "$1").trim();
   async function translateLine(text){
-    const u = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(text.slice(0, 450)) + "&langpair=th|" + trLang;
-    const r = await fetch(u); const j = await r.json();
-    const out = j && j.responseData && j.responseData.translatedText;
-    if(!out || /MYMEMORY WARNING|QUERY LENGTH/i.test(out)) throw new Error("tr");
-    return out;
+    const q = encodeURIComponent(text.slice(0, 1500));
+    // 1st choice: Google Translate (same engine as the app), shown here without leaving BahtKira
+    try{
+      const r = await fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=th&tl=" + trLang + "&dt=t&q=" + q);
+      const j = await r.json();
+      const out = (j && j[0] || []).map(x => x && x[0] || "").join("").trim();
+      if(out) return out;
+    }catch(e){}
+    // Backup: MyMemory
+    const r2 = await fetch("https://api.mymemory.translated.net/get?q=" + encodeURIComponent(text.slice(0, 450)) + "&langpair=th|" + (trLang === "en" ? "en-GB" : "ms-MY"));
+    const j2 = await r2.json();
+    const out2 = j2 && j2.responseData && j2.responseData.translatedText;
+    if(!out2 || /MYMEMORY WARNING|QUERY LENGTH|INVALID/i.test(out2)) throw new Error("tr");
+    return out2;
   }
   async function translateOnPhone(file){
     trStatus("Membaca tulisan Thai… (kali pertama ambil masa 20–40 saat)");
@@ -465,13 +474,13 @@ footer{text-align:center;font-size:.78rem;color:var(--muted)}
     const rows = lines.map(th => ({ th, tr: "…" })); renderTr(rows, all);
     trStatus("Menterjemah " + lines.length + " baris…");
     let fails = 0;
-    for(let i = 0; i < rows.length; i++){
-      try{ rows[i].tr = await translateLine(rows[i].th); }catch(e){ rows[i].tr = "(tidak dapat diterjemah)"; fails++; }
+    await Promise.all(rows.map(async row => {
+      try{ row.tr = await translateLine(row.th); }catch(e){ row.tr = "(tidak dapat diterjemah)"; fails++; }
       renderTr(rows, all);
-    }
+    }));
     trStatus(fails === rows.length
-      ? "Terjemahan tidak tersedia sekarang. Tekan pautan Google Translate di bawah."
-      : "Siap. Terjemahan automatik mungkin tidak tepat sepenuhnya; semak dengan Google Translate jika ragu.", fails === rows.length);
+      ? "Terjemahan gagal. Semak sambungan internet dan cuba lagi."
+      : "Siap. Terjemahan automatik, jadi mungkin ada yang kurang tepat.", fails === rows.length);
   }
   $("trPhoto").addEventListener("change", async e => {
     const f = e.target.files && e.target.files[0];
